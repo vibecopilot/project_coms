@@ -2382,6 +2382,27 @@ export const postStaff = async (data) =>
     },
   });
 
+export const downloadStaffQrCodes = async (staffIds = []) =>
+  axiosInstance.post(
+    "/staffs/qr_codes_download.json",
+    { staff_ids: staffIds },
+    {
+      params: {
+        token: token,
+      },
+      responseType: "blob",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    }
+  );
+
+  export const getStaffIn = async (page = 1, perPage = 10) =>
+  getStaff(page, perPage, "IN");
+
+export const getStaffOut = async (page = 1, perPage = 10) =>
+  getStaff(page, perPage, "OUT");
+
 export const putStaffApproval = async (id, data) =>
   axiosInstance.put(`/staffs/${id}.json`, data, {
     params: {
@@ -8048,6 +8069,17 @@ export const getUserDetails = async (empId) => {
     throw error;
   }
 };
+
+export const updateUserAdminApproval = async (id, payload, token) =>
+  axiosInstance.patch(`users/${id}/update_status.json`, payload, {
+    params: { token },
+  });
+
+  export const updateUserStatus = (id, payload, token) =>
+  axiosInstance.patch(`users/${id}/update_status.json`, payload, {
+    params: { token },
+  });
+  
 export const getEmployeeAsset = async (empId) => {
   try {
     const response = await HrmsAuth.get(
