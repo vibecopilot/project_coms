@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { PiPlusCircle } from "react-icons/pi";
 import Navbar from "../../components/Navbar";
 import Table from "../../components/table/Table";
-import { getSetupUsers, getUserCount } from "../../api";
+import { getSetupUsers, getUserCount, updateUserAdminApproval, updateUserStatus } from "../../api";
 import { Link } from "react-router-dom";
 import { BsEye } from "react-icons/bs";
 // import { useSelector } from "react-redux";
@@ -46,19 +46,20 @@ const UserSetup = () => {
   }, []);
 
   const tabFilteredUsers = useMemo(() => {
-    if (activeTab === "approved") {
-      return users.filter((user) => user.user_sites?.[0]?.is_approved === true);
-    }
-    if (activeTab === "pending") {
-      return users.filter(
-        (user) => user.user_sites?.[0]?.is_approved === false,
-      );
-    }
-    if (activeTab === "rejected") {
-      return users.filter((user) => user.user_sites?.[0]?.is_approved === null || user.user_sites?.[0]?.is_approved === undefined);
-    }
-    return users;
-  }, [users, activeTab]);
+  if (activeTab === "approved") {
+    return users.filter((user) => user.is_admin_approved === true);
+  }
+
+  if (activeTab === "pending") {
+    return users.filter((user) => user.is_admin_approved === null);
+  }
+
+  if (activeTab === "rejected") {
+    return users.filter((user) => user.is_admin_approved === false);
+  }
+
+  return users;
+}, [users, activeTab]);
 
   console.log("count", count);
 
@@ -130,6 +131,52 @@ const UserSetup = () => {
   //   (user) => user.status === "approved"
   // ).length;
   // const pendingUsers = users.filter((user) => user.status === "pending").length;
+
+const handleApproval = async (id, status) => {
+  try {
+    const payload = {
+      is_admin_approved: status,
+    };
+
+    const token = localStorage.getItem("token"); // or your method
+
+    await updateUserAdminApproval(id, payload, token);
+
+    // ✅ Update UI instantly
+    setUsers((prev) =>
+      prev.map((user) =>
+        user.id === id ? { ...user, is_admin_approved: status } : user
+      )
+    );
+  } catch (error) {
+    console.log("Approval Error:", error);
+  }
+};
+
+const handleStatusToggle = async (row) => {
+  try {
+    const token = localStorage.getItem("token");
+
+    const newStatus = !row.user_status; // toggle once
+
+    const payload = {
+      user_status: newStatus,
+    };
+
+    await updateUserStatus(row.id, payload, token);
+
+    // ✅ Update UI using SAME value (not toggling again)
+    setUsers((prev) =>
+      prev.map((user) =>
+        user.id === row.id
+          ? { ...user, user_status: newStatus }
+          : user
+      )
+    );
+  } catch (error) {
+    console.log("Status Update Error:", error);
+  }
+};
 
   const userColumn = [
     {
@@ -212,7 +259,53 @@ const UserSetup = () => {
       sortable: true,
       wrap: true,
     },
+   ...(activeTab === "pending"
+    ? [
+        {
+          name: "Approval",
+          cell: (row) => (
+            <div className="flex gap-2">
+              {/* APPROVE */}
+              <button
+                onClick={() => handleApproval(row.id, true)}
+                className="bg-green-500 hover:bg-green-600 text-white rounded-full w-8 h-8 flex items-center justify-center"
+              >
+                ✓
+              </button>
+
+              {/* REJECT */}
+              <button
+                onClick={() => handleApproval(row.id, false)}
+                className="bg-red-500 hover:bg-red-600 text-white rounded-full w-8 h-8 flex items-center justify-center"
+              >
+                ✕
+              </button>
+            </div>
+          ),
+        },
+      ]
+    : []),
+    {
+  name: "Status",
+  cell: (row) => (
+    <div
+      onClick={() => handleStatusToggle(row)}
+      className={`w-12 h-6 flex items-center rounded-full p-1 cursor-pointer transition ${
+        row.user_status ? "bg-green-500" : "bg-red-500"
+      }`}
+    >
+      <div
+        className={`bg-white w-4 h-4 rounded-full shadow-md transform transition ${
+          row.user_status ? "translate-x-6" : "translate-x-0"
+        }`}
+      />
+    </div>
+  ),
+  sortable: true,
+}
   ];
+
+    const totalDownloads = users?.filter(user => user.is_downloaded).length || 0;
 
   const dashboardCards = [
     {
@@ -223,7 +316,7 @@ const UserSetup = () => {
     },
     {
       title: "Total App Downloads",
-      value: count?.total_downloads || 0,
+      value: totalDownloads|| 0,
       icon: <FaDownload size={28} />,
       bg: "from-green-500 to-green-700",
     },

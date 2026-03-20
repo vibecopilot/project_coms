@@ -7,6 +7,7 @@ import Navbar from "../../components/Navbar";
 import Table from "../../components/table/Table";
 import VisitorFilters from "../../components/VisitorFilters";
 import {
+  domainPrefix,
   getAllVisitorLogs,
   getExpectedVisitor,
   getVisitorApprovals,
@@ -16,7 +17,7 @@ import {
   postVisitorLogToBackend,
   visitorApproval,
 } from "../../api";
-import { BsEye } from "react-icons/bs";
+import { BsEye, BsPerson } from "react-icons/bs";
 import { BiEdit } from "react-icons/bi";
 import { DNA } from "react-loader-spinner";
 
@@ -882,42 +883,79 @@ const VisitorPage = () => {
           </Link>
         </div>
       ),
+      width: "120px"  
     },
+            { name: "ID", selector: (row) => row.id, sortable: true,width: "90px"   },
+
+    {
+  name: "Profile",
+  cell: (row) => {
+    // const baseUrl = "https://admin.vibecopilot.ai"; // change if needed
+    const imageUrl = row.profile_picture
+      ? `${domainPrefix}${row.profile_picture}`
+      : null;
+
+    return imageUrl ? (
+      <img
+        src={imageUrl}
+        alt="profile"
+        className="w-9 h-9 rounded-full object-cover"
+        onError={(e) => {
+          e.target.onerror = null;
+          e.target.src = "/default-user.png"; // fallback image (optional)
+        }}
+      />
+    ) : (
+      <div className="w-9 h-9 flex items-center justify-center bg-gray-200 rounded-full">
+        <BsPerson size={16} />
+      </div>
+    );
+  },
+  width: "120px"  
+},
+    
     {
       name: "Visitor Type",
       selector: (row) => row.visit_type,
       sortable: true,
+      
     },
     {
       name: " Name",
       selector: (row) => row.name,
       sortable: true,
+      width: "120px"  
     },
     {
       name: "Contact No.",
       selector: (row) => row.contact_no,
       sortable: true,
+      width: "120px"  
     },
 
     {
       name: "Purpose",
       selector: (row) => row.purpose,
       sortable: true,
+      width: "120px"  
     },
     {
       name: "Coming from",
       selector: (row) => row.coming_from,
       sortable: true,
+      width: "120px"  
     },
     {
       name: "Tower-Floor-Unit",
       selector: (row) => row.hosts[0]?.unit_name,
       sortable: true,
+    
     },
     {
       name: "Host",
       selector: (row) => `${row?.hosts[0]?.full_name}`,
       sortable: true,
+      width: "120px"  
     },
     // {
     //   name: "Expected Date",
@@ -935,11 +973,29 @@ const VisitorPage = () => {
       sortable: true,
     },
 
-    {
-      name: "Host Approval",
-      selector: (row) => (row.skip_host_approval ? "Not Required" : "Required"),
-      sortable: true,
-    },
+   {
+  name: "Host Approval",
+  cell: (row) => {
+    let status = "Pending";
+    let colorClass = "text-yellow-600";
+
+    if (row.skip_host_approval === true) {
+      status = "Approved";
+      colorClass = "text-green-600 ";
+    } else if (row.skip_host_approval === false) {
+      status = "Rejected";
+      colorClass = "text-red-600 ";
+    }
+
+    return (
+      <span className={`px-2 py-1 rounded text-sm font-medium ${colorClass}`}>
+        {status}
+      </span>
+    );
+  },
+  sortable: true,
+  width: "120px"  
+},
 
     {
       name: "Pass Start",
@@ -950,31 +1006,9 @@ const VisitorPage = () => {
       name: "Pass End",
       selector: (row) => (row.end_pass ? dateFormat(row.end_pass) : ""),
       sortable: true,
+      width: "120px"  
     },
-    // {
-    //   name: "Check In",
-    //   selector: (row) => (
-    //     <p>
-    //       {row && row.visits_log && row.visits_log.length > 0 ? (
-    //         row.visits_log.map((visit, index) =>
-    //           visit.check_in ? (
-    //             <span key={index}>{dateTimeFormat(visit.check_in)}</span>
-    //           ) : (
-    //             <span key={index}>-</span>
-    //           )
-    //         )
-    //       ) : (
-    //         <span>-</span>
-    //       )}
-    //     </p>
-    //   ),
-    //   sortable: true,
-    // },
-    // {
-    //   name: "Check Out",
-    //   selector: (row) => (row.check_out ? dateTimeFormat(row.check_out) : ""),
-    //   sortable: true,
-    // },
+  
     {
       name: "Status",
       selector: (row) => (
@@ -987,18 +1021,30 @@ const VisitorPage = () => {
         </div>
       ),
       sortable: true,
+      width: "120px"  
+    },
+     {
+      name: "Check In",
+      selector: (row) => (
+        <p>
+          {row && row.visits_log && row.visits_log.length > 0 ? (
+            row.visits_log.map((visit, index) =>
+              visit.check_in ? (
+                <span key={index}>{dateTimeFormat(visit.check_in)}</span>
+              ) : (
+                <span key={index}>-</span>
+              )
+            )
+          ) : (
+            <span>-</span>
+          )}
+        </p>
+      ),
+      sortable: true,
     },
     {
-      name: "In/OUT",
-      selector: (row) => (
-        <div
-          className={`${
-            row.visitor_in_out === "IN" ? "text-red-400" : "text-green-400"
-          } `}
-        >
-          {row.visitor_in_out}
-        </div>
-      ),
+      name: "Check Out",
+      selector: (row) => (row.check_out ? dateTimeFormat(row.check_out) : ""),
       sortable: true,
     },
   ];
@@ -1127,6 +1173,20 @@ const VisitorPage = () => {
       selector: (row) => row.contact_no,
       sortable: true,
     },
+    {
+  name: "Check In",
+  selector: (row) =>
+    row.visitor_logs?.check_in
+      ? new Date(row.visitor_logs.check_in).toLocaleString()
+      : "--",
+},
+{
+  name: "Check Out",
+  selector: (row) =>
+    row.visitor_logs?.check_out
+      ? new Date(row.visitor_logs.check_out).toLocaleString()
+      : "--",
+},
     {
       name: "Approval Date",
       selector: (row) => dateTimeFormat(row.approval_date),
