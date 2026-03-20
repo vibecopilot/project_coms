@@ -1042,11 +1042,20 @@ const VisitorPage = () => {
       ),
       sortable: true,
     },
-    {
-      name: "Check Out",
-      selector: (row) => (row.check_out ? dateTimeFormat(row.check_out) : ""),
-      sortable: true,
-    },
+   {
+  name: "Check Out",
+  selector: (row) => {
+    const checkout = row.visits_log?.[0]?.check_out;
+    return checkout ? dateTimeFormat(checkout) : "";
+  },
+  sortable: true,
+},
+{
+  name: "Created At",
+  selector: (row) =>
+    row.created_at ? dateTimeFormat(row.created_at) : "",
+  sortable: true,
+},
   ];
   const [searchText, setSearchText] = useState("");
   const handleSearch = (e) => {
