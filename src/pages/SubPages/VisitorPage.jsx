@@ -974,17 +974,19 @@ const VisitorPage = () => {
     },
 
    {
-  name: "Host Approval",
-  cell: (row) => {
+      name: "Host Approval",
+      cell: (row) => {
+         const hostApproval = row.hosts?.[0]?.is_approved;
+
     let status = "Pending";
     let colorClass = "text-yellow-600";
 
-    if (row.skip_host_approval === true) {
+    if (hostApproval === true) {
       status = "Approved";
-      colorClass = "text-green-600 ";
-    } else if (row.skip_host_approval === false) {
+      colorClass = "text-green-600";
+    } else if (hostApproval === false) {
       status = "Rejected";
-      colorClass = "text-red-600 ";
+      colorClass = "text-red-600";
     }
 
     return (
@@ -994,7 +996,7 @@ const VisitorPage = () => {
     );
   },
   sortable: true,
-  width: "120px"  
+  width: "120px"
 },
 
     {
